@@ -1,0 +1,16 @@
+{
+  "name": "FallCarrier",
+  "short_name": "FallCarrier",
+  "description": "Sovereign mobile connectivity · WebRTC mesh + LoRa + relay",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1a1a1e",
+  "theme_color": "#1a1a1e",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231a1a1e'/%3E%3Ctext x='256' y='352' font-family='serif' font-size='288' fill='%237a9c7e' text-anchor='middle'%3E%E2%97%8A%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

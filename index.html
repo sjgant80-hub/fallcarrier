@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FallCarrier · sovereign mobile connectivity</title>
+<meta name="description" content="Mesh-first networking. Cell-optional. WebRTC + LoRa + WebSocket relay. Works when the towers don't.">
+<meta name="author" content="AI-Native Solutions">
+<meta name="theme-color" content="#1a1a1e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231a1a1e'/%3E%3Ctext x='16' y='22' font-family='serif' font-size='18' fill='%237a9c7e' text-anchor='middle'%3E%E2%97%8A%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--void:#1a1a1e;--deep:#212127;--surface:#2a2a30;--raised:#33333a;--line:rgba(232,228,219,0.08);--line2:rgba(232,228,219,0.16);--text:#e8e4db;--muted:#928d80;--dim:#6b6660;--sage:#7a9c7e;--sage-dim:rgba(122,156,126,0.14);--amber:#d4a052;--amber-dim:rgba(212,160,82,0.12);--coral:#d67a5a;--coral-glow:rgba(214,122,90,0.15);--serif:'Cormorant Garamond','Iowan Old Style',Georgia,serif;--sans:'Inter',-apple-system,system-ui,sans-serif;--mono:'JetBrains Mono','IBM Plex Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--void);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;background:transparent;color:inherit}
+input,textarea,select{font-family:inherit;background:var(--surface);color:var(--text);border:1px solid var(--line2);outline:none;width:100%;padding:10px 12px;border-radius:8px;font-size:14px}
+input:focus,textarea:focus{border-color:var(--sage)}
+h1,h2,h3{font-family:var(--serif);font-weight:400;color:var(--text);line-height:1.2}
+h1{font-size:36px;letter-spacing:0.01em;margin-bottom:6px}
+h1 em{color:var(--sage);font-style:italic}
+h2{font-size:20px;color:var(--text);margin-bottom:12px}
+h3{font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.16em;font-family:var(--mono);font-weight:500}
+.topbar{background:rgba(26,26,30,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:16px 28px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:baseline;gap:10px;font-family:var(--serif);font-size:24px;color:var(--text)}
+.brand .glyph{color:var(--sage);font-size:22px}
+.brand .co{color:var(--dim);font-family:var(--mono);font-size:9.5px;letter-spacing:0.16em;margin-left:6px;text-transform:uppercase}
+.did-chip{font-family:var(--mono);font-size:10.5px;color:var(--muted);background:var(--surface);padding:6px 12px;border-radius:6px;letter-spacing:0.06em}
+main{max-width:1200px;margin:0 auto;padding:28px;display:grid;gap:20px}
+.hero{padding:8px 0 12px}
+.hero p{color:var(--muted);font-size:15px;max-width:640px;line-height:1.7}
+.hero em{color:var(--sage);font-style:italic}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--deep);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+.card h3{margin-bottom:12px}
+.status{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--dim);flex-shrink:0}
+.dot.on{background:var(--sage);box-shadow:0 0 8px var(--sage)}
+.dot.warn{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.dot.off{background:var(--dim)}
+.status .lbl{font-family:var(--mono);font-size:11.5px;color:var(--text);letter-spacing:0.06em}
+.status .sub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto}
+.btn{background:var(--sage);color:var(--void);padding:10px 18px;border-radius:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;transition:all .15s}
+.btn:hover{background:#8db091}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line2)}
+.btn.ghost:hover{border-color:var(--sage);color:var(--sage)}
+.btn.small{padding:6px 12px;font-size:9.5px}
+.two{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+.mesh-svg{width:100%;height:340px;background:var(--surface);border-radius:10px;border:1px solid var(--line)}
+.legend{display:flex;gap:14px;margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em}
+.legend .lg{display:flex;align-items:center;gap:6px}
+.legend .swatch{width:14px;height:2px}
+.compose label{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px;margin-top:12px}
+.compose label:first-child{margin-top:0}
+.compose textarea{min-height:80px;resize:vertical;font-family:var(--mono);font-size:12.5px}
+.compose .row{display:flex;gap:10px;margin-top:14px}
+.route-box{background:var(--surface);border:1px solid var(--line2);border-radius:8px;padding:12px 14px;margin-top:12px;font-family:var(--mono);font-size:11.5px;color:var(--text);display:none}
+.route-box.on{display:block}
+.route-box .hop{color:var(--sage)}
+.route-box .miss{color:var(--amber)}
+.log{max-height:320px;overflow-y:auto}
+.log-item{border-bottom:1px solid var(--line);padding:10px 0;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.log-item:last-child{border-bottom:none}
+.log-item .top{display:flex;justify-content:space-between;color:var(--text);margin-bottom:4px}
+.log-item .top .stat{color:var(--sage)}
+.log-item .top .stat.q{color:var(--amber)}
+.log-item .top .stat.d{color:var(--coral)}
+.log-item .path{font-size:10px;color:var(--dim);margin-top:3px}
+.peer-list{display:flex;flex-direction:column;gap:6px}
+.peer{display:flex;justify-content:space-between;padding:9px 12px;background:var(--surface);border-radius:6px;font-family:var(--mono);font-size:11px}
+.peer .did{color:var(--text)}
+.peer .tp{color:var(--sage)}
+.relay-row{display:flex;gap:8px;margin-bottom:8px}
+.relay-row input{flex:1}
+.relay-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.relay-item{display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:6px;font-family:var(--mono);font-size:11px}
+.relay-item .u{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.relay-item .x{color:var(--coral);cursor:pointer}
+footer{border-top:1px solid var(--line);padding:28px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:10.5px;letter-spacing:0.12em;margin-top:20px}
+footer a{color:var(--sage);text-decoration:none}
+.notice{background:var(--amber-dim);border:1px solid var(--amber);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--text);margin-top:10px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><span class="glyph">◊</span>FallCarrier<span class="co">AI-Native Solutions</span></div>
+  <div class="did-chip" id="did">did:fc:—</div>
+</div>
+<main>
+  <div class="hero">
+    <h1>Sovereign <em>mobile connectivity</em>.</h1>
+    <p>Mesh-first. Cell-optional. Messages hop peer-to-peer over <em>WebRTC</em>, LoRa radio, or WebSocket relay — whichever path is up. Works at festivals, in outages, off-grid.</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>WebRTC mesh</h3>
+      <div class="status"><div class="dot" id="d-wrtc"></div><span class="lbl">Local peers</span><span class="sub" id="s-wrtc">0 peers</span></div>
+      <p style="color:var(--muted);font-size:12.5px;margin-top:6px">Same-network peer discovery via FallLink. No cell tower needed.</p>
+    </div>
+    <div class="card">
+      <h3>LoRa radio</h3>
+      <div class="status"><div class="dot" id="d-lora"></div><span class="lbl">Meshtastic</span><span class="sub" id="s-lora">no device</span></div>
+      <button class="btn small" id="pair-lora" style="margin-top:8px">Pair LoRa device</button>
+    </div>
+    <div class="card">
+      <h3>WebSocket relay</h3>
+      <div class="status"><div class="dot" id="d-relay"></div><span class="lbl">Internet fallback</span><span class="sub" id="s-relay">0 configured</span></div>
+      <p style="color:var(--muted);font-size:12.5px;margin-top:6px">For when nobody local has a path out.</p>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h3>Peer mesh</h3>
+      <svg class="mesh-svg" id="mesh" viewBox="0 0 800 340"></svg>
+      <div class="legend">
+        <div class="lg"><div class="swatch" style="background:var(--sage)"></div>WebRTC</div>
+        <div class="lg"><div class="swatch" style="background:var(--amber)"></div>LoRa</div>
+        <div class="lg"><div class="swatch" style="background:var(--coral)"></div>Relay</div>
+      </div>
+    </div>
+    <div class="card compose">
+      <h3>Compose</h3>
+      <label>To DID</label>
+      <input id="to-did" placeholder="did:fc:...">
+      <label>Payload</label>
+      <textarea id="payload" placeholder="text · or JSON"></textarea>
+      <div class="row">
+        <button class="btn ghost" id="trace">Trace route</button>
+        <button class="btn" id="send">Send</button>
+      </div>
+      <div class="route-box" id="route"></div>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h3>Message log</h3>
+      <div class="log" id="log"><div style="color:var(--dim);font-family:var(--mono);font-size:11px;padding:20px 0;text-align:center">no messages yet</div></div>
+    </div>
+    <div class="card">
+      <h3>Reachable peers</h3>
+      <div class="peer-list" id="peers"><div style="color:var(--dim);font-family:var(--mono);font-size:11px;padding:20px 0;text-align:center">no peers yet</div></div>
+
+      <h3 style="margin-top:22px">Relays</h3>
+      <div class="relay-row">
+        <input id="relay-url" placeholder="wss://relay.example.org">
+        <button class="btn small" id="add-relay">Add</button>
+      </div>
+      <div class="relay-list" id="relay-list"></div>
+
+      <div class="notice">LoRa v1 · detects + frames Meshtastic serial traffic. Full protobuf decode is v2.</div>
+    </div>
+  </div>
+</main>
+<footer>◊ FallCarrier · MIT · <a href="https://github.com/sjgant80-hub/fallcarrier">source</a></footer>
+
+<script type="module">
+import { FallCarrier } from './fallcarrier.js';
+
+// stub falllink shim — replace with real https://sjgant80-hub.github.io/falllink/falllink.js when peers exist
+const stubLink = {
+  _peers: new Map(),
+  _handlers: {},
+  on(ev, fn){ (this._handlers[ev] = this._handlers[ev]||[]).push(fn); },
+  async start(){
+    // seed with synthetic demo peers for the graph to render
+    setTimeout(() => {
+      const demo = ['did:fc:atrium9k','did:fc:woodside','did:fc:seaboard'];
+      for(const did of demo){
+        (this._handlers.peer||[]).forEach(fn => fn({did, latency: 30 + Math.random()*80}));
+      }
+    }, 800);
+  },
+  send(to, msg){ /* would send via RTCDataChannel */ },
+  broadcast(msg){ /* fanout */ }
+};
+
+const fc = new FallCarrier({
+  fallid: { did: async () => 'did:fc:' + Math.random().toString(36).slice(2,10) },
+  falllink: stubLink,
+  transports: ['webrtc','lora','websocket-relay']
+});
+
+const $ = s => document.querySelector(s);
+
+fc.addEventListener('ready', e => {
+  $('#did').textContent = e.detail.did;
+  render();
+});
+fc.addEventListener('peer', () => render());
+fc.addEventListener('sent', () => renderLog());
+fc.addEventListener('queued', () => renderLog());
+fc.addEventListener('lora-paired', e => {
+  $('#s-lora').textContent = e.detail.name + ' · ' + e.detail.channel;
+  render();
+});
+fc.addEventListener('lora-frame', e => {
+  addLog({top:'LoRa RX', stat:'rx', bytes:e.detail.bytes, hex:e.detail.hex});
+});
+fc.addEventListener('relay-open', () => render());
+fc.addEventListener('relay-close', () => render());
+
+fc.connect();
+
+function render(){
+  const s = fc.transportStatus();
+  // dots
+  $('#d-wrtc').className = 'dot ' + (s.webrtc.peers > 0 ? 'on' : 'off');
+  $('#s-wrtc').textContent = s.webrtc.peers + ' peer' + (s.webrtc.peers===1?'':'s');
+
+  if(s.lora.devices > 0){ $('#d-lora').className = 'dot on'; }
+  else if(s.lora.supported){ $('#d-lora').className = 'dot warn'; $('#s-lora').textContent = 'ready to pair'; }
+  else { $('#d-lora').className = 'dot off'; $('#s-lora').textContent = 'unsupported'; }
+
+  $('#d-relay').className = 'dot ' + (s.relay.open > 0 ? 'on' : 'off');
+  $('#s-relay').textContent = s.relay.total + ' configured · ' + s.relay.open + ' open';
+
+  drawMesh();
+  drawPeers();
+  drawRelays();
+}
+
+function drawMesh(){
+  const svg = $('#mesh');
+  const peers = fc.getPeers();
+  const W = 800, H = 340;
+  svg.innerHTML = '';
+  const cx = W/2, cy = H/2;
+  // self node
+  const self = mk('circle', {cx, cy, r:22, fill:'#7a9c7e'});
+  svg.appendChild(self);
+  const selfLabel = mk('text', {x:cx, y:cy+4, 'text-anchor':'middle', fill:'#1a1a1e', 'font-family':'JetBrains Mono, monospace', 'font-size':11, 'font-weight':700});
+  selfLabel.textContent = 'YOU';
+  svg.appendChild(selfLabel);
+  if(!peers.length){
+    const t = mk('text', {x:cx, y:cy+56, 'text-anchor':'middle', fill:'#6b6660', 'font-family':'JetBrains Mono, monospace', 'font-size':11});
+    t.textContent = 'awaiting peers…';
+    svg.appendChild(t);
+    return;
+  }
+  const R = Math.min(W,H) * 0.32;
+  peers.forEach((p, i) => {
+    const a = (i / peers.length) * Math.PI * 2 - Math.PI/2;
+    const px = cx + Math.cos(a) * R;
+    const py = cy + Math.sin(a) * R;
+    const color = p.transport === 'webrtc' ? '#7a9c7e' : p.transport === 'lora' ? '#d4a052' : '#d67a5a';
+    const edge = mk('line', {x1:cx, y1:cy, x2:px, y2:py, stroke:color, 'stroke-width':2, 'stroke-opacity':0.55});
+    svg.appendChild(edge);
+    const node = mk('circle', {cx:px, cy:py, r:16, fill:'#2a2a30', stroke:color, 'stroke-width':2});
+    svg.appendChild(node);
+    const nl = mk('text', {x:px, y:py+4, 'text-anchor':'middle', fill:'#e8e4db', 'font-family':'JetBrains Mono, monospace', 'font-size':9});
+    nl.textContent = p.did.slice(-6);
+    svg.appendChild(nl);
+    const lat = mk('text', {x:px, y:py+30, 'text-anchor':'middle', fill:'#928d80', 'font-family':'JetBrains Mono, monospace', 'font-size':9});
+    lat.textContent = (p.latency||0) + 'ms · ' + p.transport;
+    svg.appendChild(lat);
+  });
+}
+
+function mk(t, attrs){
+  const el = document.createElementNS('http://www.w3.org/2000/svg', t);
+  for(const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+function drawPeers(){
+  const list = fc.getPeers();
+  const el = $('#peers');
+  if(!list.length){ el.innerHTML = '<div style="color:var(--dim);font-family:var(--mono);font-size:11px;padding:20px 0;text-align:center">no peers yet</div>'; return; }
+  el.innerHTML = list.map(p =>
+    `<div class="peer"><span class="did">${p.did.slice(0,20)}${p.did.length>20?'…':''}</span><span class="tp">${p.transport} · ${p.latency||0}ms</span></div>`
+  ).join('');
+}
+
+function drawRelays(){
+  const el = $('#relay-list');
+  if(!fc.relays.length){ el.innerHTML = ''; return; }
+  el.innerHTML = fc.relays.map(r =>
+    `<div class="relay-item"><span class="u" title="${r.url}">${r.url}</span><span class="x" data-url="${r.url}">${r.status} · ✕</span></div>`
+  ).join('');
+  el.querySelectorAll('.x').forEach(x => x.addEventListener('click', () => { fc.removeRelay(x.dataset.url); render(); }));
+}
+
+function renderLog(){
+  const el = $('#log');
+  if(!fc.log.length){ return; }
+  el.innerHTML = fc.log.slice(-30).reverse().map(entry => {
+    const t = new Date(entry.ts).toLocaleTimeString();
+    const stat = entry.status === 'sent' ? 'stat' : entry.status === 'queued' ? 'stat q' : 'stat d';
+    return `<div class="log-item">
+      <div class="top"><span>→ ${(entry.to||'').slice(0,24)}</span><span class="${stat}">${entry.status}${entry.transport?' · '+entry.transport:''}</span></div>
+      <div>${t}${entry.retries?' · retry '+entry.retries:''}</div>
+      ${entry.path && entry.path.length ? `<div class="path">path · ${entry.path.map(p=>p.slice(-6)).join(' → ')}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function addLog(o){
+  const el = $('#log');
+  const div = document.createElement('div');
+  div.className = 'log-item';
+  div.innerHTML = `<div class="top"><span>${o.top}</span><span class="stat">${o.bytes}B</span></div><div class="path">${o.hex||''}</div>`;
+  if(el.firstChild && el.firstChild.style && el.firstChild.style.textAlign) el.innerHTML = '';
+  el.insertBefore(div, el.firstChild);
+}
+
+$('#pair-lora').addEventListener('click', async () => {
+  try {
+    await fc.subscribeLoRa();
+  } catch(e){
+    alert('LoRa pair failed · ' + e.message);
+  }
+});
+
+$('#send').addEventListener('click', async () => {
+  const to = $('#to-did').value.trim();
+  const p = $('#payload').value.trim();
+  if(!to || !p){ alert('need To DID and payload'); return; }
+  let payload = p;
+  try { payload = JSON.parse(p); } catch(e){}
+  await fc.send(to, payload);
+  renderLog();
+});
+
+$('#trace').addEventListener('click', () => {
+  const to = $('#to-did').value.trim();
+  if(!to){ alert('enter a To DID'); return; }
+  const r = fc.getRoute(to);
+  const box = $('#route');
+  box.className = 'route-box on';
+  if(!r.reachable){
+    box.innerHTML = `<span class="miss">✗</span> ${r.note}`;
+  } else {
+    box.innerHTML = r.hops.map(h => `<span class="hop">→</span> ${h.to.slice(-8)} <span style="color:var(--muted)">via ${h.transport} · ${h.latency}ms</span>`).join('<br>');
+  }
+});
+
+$('#add-relay').addEventListener('click', () => {
+  const u = $('#relay-url').value.trim();
+  if(!u) return;
+  fc.connectRelay(u);
+  $('#relay-url').value = '';
+  render();
+});
+
+// periodic refresh
+setInterval(render, 3000);
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
