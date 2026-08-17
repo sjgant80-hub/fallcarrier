@@ -1,0 +1,57 @@
+name: gate
+# A page IS the product here, so the gate checks the page rather than pretending there is a kernel
+# to mutate. Adding a mutation gate to a repo with no tests would print a verdict about nothing,
+# which is the test-theatre this estate exists to catch.
+#
+# Four checks, each one a real failure mode that has actually shipped in this estate:
+#   · the HTML parses and every inline script parses  — a page that 404s its own JS is a dead app
+#   · no unresolved template placeholder is served    — __THING__ reaching a visitor
+#   · every same-repo href/src resolves to a real file — the dead-link class
+#   · no obvious secret is committed                  — keys have leaked from pages before
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  page:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: the page is actually a working page
+        run: |
+          node -e "
+          const fs=require('fs'), path=require('path');
+          const html=fs.readdirSync('.').filter(f=>f.endsWith('.html'));
+          if(!html.length){ console.error('no HTML in this repo — nothing to serve'); process.exit(1); }
+          let fail=0;
+          for(const f of html){
+            const s=fs.readFileSync(f,'utf8');
+
+            // 1. every inline script must parse. A syntax error means the page loads and does nothing.
+            const blocks=[...s.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)];
+            blocks.forEach((m,i)=>{
+              try { new (require('vm').Script)(m[1].replace(/^\s*import\s.*$/gm,'').replace(/^\s*export\s/gm,'')); }
+              catch(e){ if(!/await is only valid|Unexpected token 'export'|Cannot use import/.test(e.message)){ console.error(f+' script['+i+'] DOES NOT PARSE: '+e.message); fail=1; } }
+            });
+
+            // 2. an unresolved placeholder means a generator ran and did not finish.
+            const ph=s.match(/__[A-Z][A-Z0-9_]*__/g);
+            if(ph){ console.error(f+' serves unresolved placeholders: '+[...new Set(ph)].join(', ')); fail=1; }
+
+            // 3. a same-repo link that points at nothing is a dead control.
+            for(const m of s.matchAll(/(?:href|src)=\"(?!https?:|data:|mailto:|#|\/\/)([^\"?#]+)/g)){
+              const t=m[1].replace(/^\.\//,'');
+              if(t && !fs.existsSync(t)){ console.error(f+' links to a file that is not here: '+t); fail=1; }
+            }
+          }
+
+          // 4. a committed secret. These have leaked from pages in this estate before.
+          for(const f of fs.readdirSync('.')){
+            if(!/\.(html|js|mjs|json|md)$/.test(f)) continue;
+            const s=fs.readFileSync(f,'utf8');
+            const hit=s.match(/(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)/);
+            if(hit){ console.error(f+' contains what looks like a live credential: '+hit[1].slice(0,12)+'…'); fail=1; }
+          }
+
+          if(fail){ console.error('\nPAGE GATE FAILED'); process.exit(1); }
+          console.log('page gate clean — '+html.length+' page(s): scripts parse, no placeholders, no dead same-repo links, no committed keys');
+          "
